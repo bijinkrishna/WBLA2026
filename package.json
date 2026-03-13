@@ -1,6 +1,6 @@
 {
   "name": "wbla-2026-election-tracker",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Paschim Medinipur District Election Activity Tracker - WBLA 2026",
   "private": true,
   "scripts": {
