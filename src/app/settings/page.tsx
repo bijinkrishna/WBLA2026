@@ -26,7 +26,7 @@ export default function SettingsPage() {
     setMessage(null);
     try {
       await update(pollingDate || null, countingDate || null);
-      setMessage('Election dates saved. Relative activities have been resolved.');
+      setMessage('Election dates saved. All relative activities have been resolved to these dates. Visit Activities or Gantt to see updated schedules.');
     } catch (err) {
       setMessage('Failed to save.');
     }
@@ -38,7 +38,7 @@ export default function SettingsPage() {
       <div className="px-8 py-6 max-w-xl">
         <PageHeader
           title="Election Dates"
-          subtitle="Set Polling Day and Counting Day to resolve relative activities (P-2, C-1, etc.)"
+          subtitle="Set Polling Day and Counting Day. All relative activities (P-2, C-1, etc.) resolve to these dates. When the actual date is announced, change it here and save—relative dates will update accordingly."
         />
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -56,7 +56,7 @@ export default function SettingsPage() {
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Activities with P-2, P-1, etc. will resolve to dates relative to this
+                  P-2, P-1, P+1, etc. resolve to dates relative to this. Change when actual date is announced.
                 </p>
               </div>
               <div>
@@ -71,7 +71,7 @@ export default function SettingsPage() {
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Activities with C-1, C+1, etc. will resolve to dates relative to this
+                  C-1, C+1, etc. resolve to dates relative to this. Change when actual date is announced.
                 </p>
               </div>
             </div>
