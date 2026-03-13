@@ -109,10 +109,6 @@ export interface GanttItem {
   start_date: string;
   end_date: string;
   duration_days: number;
-  schedule_type?: ScheduleType;
-  anchor?: AnchorType | null;
-  start_offset_days?: number | null;
-  end_offset_days?: number | null;
   progress: number;
   status: Status;
   priority: Priority;
