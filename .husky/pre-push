@@ -1,0 +1,4 @@
+#!/bin/sh
+node scripts/bump-version.js
+git add VERSION package.json
+git commit -m "chore: bump version to $(cat VERSION | tr -d '\n')"

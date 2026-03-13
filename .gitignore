@@ -1,0 +1,11 @@
+node_modules
+.next
+.DS_Store
+
+# Husky
+.husky/_/
+
+# Environment variables
+.env
+.env.local
+.env*.local
