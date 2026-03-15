@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AppShell from '@/components/AppShell';
 import {
   PageHeader,
@@ -32,11 +32,18 @@ export default function ActivitiesContent() {
   const cellFilter = searchParams.get('cell') || '';
 
   const { cells } = useCells();
-  const { activities, loading, upsert, remove, updateProgress } = useActivities(cellFilter || undefined);
+  const { activities, loading, upsert, remove, updateProgress, updateDates } = useActivities(cellFilter || undefined);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [parentForSub, setParentForSub] = useState<Activity | null>(null);
+  const [showInlineAdd, setShowInlineAdd] = useState(false);
+  const [inlineCellId, setInlineCellId] = useState('');
+  const [inlineTitle, setInlineTitle] = useState('');
+  const [inlineStart, setInlineStart] = useState('');
+  const [inlineEnd, setInlineEnd] = useState('');
+  const [inlinePriority, setInlinePriority] = useState<ActivityFormData['priority']>('medium');
+  const [inlineSaving, setInlineSaving] = useState(false);
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCell, setSelectedCell] = useState(cellFilter);
@@ -100,6 +107,47 @@ export default function ActivitiesContent() {
     setModalOpen(true);
   };
 
+  const handleShowInlineAdd = () => {
+    setShowInlineAdd(true);
+    setInlineCellId(selectedCell || cells[0]?.id || '');
+    setInlineTitle('');
+    setInlineStart('');
+    setInlineEnd('');
+    setInlinePriority('medium');
+  };
+
+  const handleInlineSave = async () => {
+    if (!inlineTitle.trim() || !inlineCellId) return;
+    setInlineSaving(true);
+    try {
+      const data: ActivityFormData = {
+        cell_id: inlineCellId,
+        parent_activity_id: null,
+        schedule_type: 'absolute',
+        anchor: null,
+        start_offset_days: null,
+        end_offset_days: null,
+        title: inlineTitle.trim(),
+        description: '',
+        start_date: inlineStart,
+        end_date: inlineEnd,
+        priority: inlinePriority,
+        status: 'not_started',
+        progress: 0,
+        assigned_to: '',
+        remarks: '',
+        is_milestone: false,
+      };
+      await upsert(data);
+      setInlineTitle('');
+      setInlineStart('');
+      setInlineEnd('');
+      setShowInlineAdd(false);
+    } finally {
+      setInlineSaving(false);
+    }
+  };
+
   const handleEdit = (activity: Activity) => {
     setEditingActivity(activity);
     setParentForSub(null);
@@ -134,13 +182,21 @@ export default function ActivitiesContent() {
           title="Activities"
           subtitle={currentCell ? `${currentCell.name} (${currentCell.short_code})` : 'All cells'}
           action={
-            <button
-              onClick={handleCreate}
-              className="flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 transition-colors shadow-sm"
-            >
-              <Plus size={16} />
-              Add Activity
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleShowInlineAdd}
+                className="flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 transition-colors shadow-sm"
+              >
+                <Plus size={16} />
+                Add activity (inline)
+              </button>
+              <button
+                onClick={handleCreate}
+                className="flex items-center gap-2 px-3 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Full form
+              </button>
+            </div>
           }
         />
 
@@ -200,19 +256,27 @@ export default function ActivitiesContent() {
         </div>
 
         {/* Activities Table */}
-        {filteredActivities.length === 0 && !loading ? (
+        {filteredActivities.length === 0 && !loading && !showInlineAdd ? (
           <EmptyState
             icon={<ListChecks size={48} />}
             title="No activities found"
             description={searchQuery ? 'Try different search terms.' : 'Add your first activity to get started.'}
             action={
               !searchQuery && (
-                <button
-                  onClick={handleCreate}
-                  className="px-4 py-2 bg-brand-500 text-white text-sm rounded-lg hover:bg-brand-600"
-                >
-                  Add Activity
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleShowInlineAdd}
+                    className="px-4 py-2 bg-brand-500 text-white text-sm rounded-lg hover:bg-brand-600"
+                  >
+                    Add activity (inline)
+                  </button>
+                  <button
+                    onClick={handleCreate}
+                    className="px-4 py-2 border border-gray-200 text-sm rounded-lg hover:bg-gray-50"
+                  >
+                    Full form
+                  </button>
+                </div>
               )
             }
           />
@@ -228,6 +292,74 @@ export default function ActivitiesContent() {
               <span>Progress</span>
               <span className="text-right">Actions</span>
             </div>
+
+            {/* Inline add row */}
+            {showInlineAdd && (
+              <div className="grid grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-5 py-2 items-center bg-brand-50/50 border-b border-brand-100">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <select
+                    value={inlineCellId}
+                    onChange={(e) => setInlineCellId(e.target.value)}
+                    className="w-full max-w-[200px] px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  >
+                    <option value="">Select cell</option>
+                    {cells.map((c) => (
+                      <option key={c.id} value={c.id}>{c.short_code} — {c.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={inlineTitle}
+                    onChange={(e) => setInlineTitle(e.target.value)}
+                    placeholder="Activity title"
+                    className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    onKeyDown={(e) => e.key === 'Enter' && handleInlineSave()}
+                  />
+                </div>
+                <input
+                  type="date"
+                  value={inlineStart}
+                  onChange={(e) => setInlineStart(e.target.value)}
+                  className="w-full px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+                <input
+                  type="date"
+                  value={inlineEnd}
+                  onChange={(e) => setInlineEnd(e.target.value)}
+                  min={inlineStart || undefined}
+                  className="w-full px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+                <span className="text-xs text-gray-400">—</span>
+                <select
+                  value={inlinePriority}
+                  onChange={(e) => setInlinePriority(e.target.value as ActivityFormData['priority'])}
+                  className="w-full px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+                <span className="text-xs text-gray-400">—</span>
+                <div className="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowInlineAdd(false)}
+                    className="px-2 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleInlineSave}
+                    disabled={inlineSaving || !inlineTitle.trim() || !inlineCellId}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-brand-500 rounded hover:bg-brand-600 disabled:opacity-50"
+                  >
+                    {inlineSaving ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Rows grouped by cell */}
             <div className="divide-y divide-gray-50">
@@ -261,6 +393,7 @@ export default function ActivitiesContent() {
                       onDelete={handleDelete}
                       onAddSub={handleAddSub}
                       onUpdateProgress={updateProgress}
+                      onUpdateDates={updateDates}
                     />
                   ))}
                 </div>
@@ -317,6 +450,7 @@ function ActivityRow({
   onDelete,
   onAddSub,
   onUpdateProgress,
+  onUpdateDates,
 }: {
   activity: Activity;
   idToActivity: Map<string, Activity>;
@@ -327,9 +461,25 @@ function ActivityRow({
   onDelete: (id: string, title: string) => void;
   onAddSub: (parent: Activity) => void;
   onUpdateProgress: (id: string, progress: number, status?: string) => void;
+  onUpdateDates: (id: string, start_date: string | null, end_date: string | null) => void;
 }) {
+  const [editingDate, setEditingDate] = useState<'start' | 'end' | null>(null);
+  const [tempStart, setTempStart] = useState(activity.start_date || '');
+  const [tempEnd, setTempEnd] = useState(activity.end_date || '');
+  useEffect(() => {
+    setTempStart(activity.start_date || '');
+    setTempEnd(activity.end_date || '');
+  }, [activity.start_date, activity.end_date]);
   const hasSubs = activity.sub_activities && activity.sub_activities.length > 0;
   const overdue = isOverdue(activity.end_date, activity.status);
+  const canEditDates = activity.schedule_type !== 'relative';
+
+  const handleDateSave = (field: 'start' | 'end', value: string) => {
+    const start = field === 'start' ? value : activity.start_date || '';
+    const end = field === 'end' ? value : activity.end_date || '';
+    onUpdateDates(activity.id, start || null, end || null);
+    setEditingDate(null);
+  };
 
   return (
     <>
@@ -389,19 +539,62 @@ function ActivityRow({
           <StatusBadge status={activity.status} />
         </div>
 
-        {/* Dates */}
-        <span className={cn('text-xs tabular-nums', overdue ? 'text-red-600 font-medium' : 'text-gray-500')} title={activity.start_date ? formatDate(activity.start_date) : undefined}>
-          {activity.schedule_type === 'relative' && activity.anchor != null && activity.start_offset_days != null
-            ? formatRelativeLabel(activity.anchor, activity.start_offset_days, activity.end_offset_days ?? undefined)
-            : formatDate(activity.start_date)}
-        </span>
-        <span className={cn('text-xs tabular-nums', overdue ? 'text-red-600 font-medium' : 'text-gray-500')} title={activity.end_date ? formatDate(activity.end_date) : undefined}>
-          {activity.schedule_type === 'relative' && activity.anchor != null && activity.start_offset_days != null
-            ? (activity.end_offset_days != null && activity.end_offset_days !== activity.start_offset_days
-                ? (activity.anchor === 'polling' ? 'P' : 'C') + (activity.end_offset_days >= 0 ? `+${activity.end_offset_days}` : `${activity.end_offset_days}`)
-                : '—')
-            : formatDate(activity.end_date)}
-        </span>
+        {/* Dates - inline editable for absolute schedule */}
+        <div
+          className={cn(
+            'text-xs tabular-nums min-w-[90px]',
+            overdue ? 'text-red-600 font-medium' : 'text-gray-500',
+            canEditDates && 'cursor-pointer hover:bg-gray-100 rounded px-1 -mx-1'
+          )}
+          onClick={() => canEditDates && setEditingDate('start')}
+          title={canEditDates ? 'Click to edit' : undefined}
+        >
+          {canEditDates && editingDate === 'start' ? (
+            <input
+              type="date"
+              value={tempStart}
+              onChange={(e) => setTempStart(e.target.value)}
+              onBlur={() => handleDateSave('start', tempStart)}
+              onKeyDown={(e) => e.key === 'Enter' && handleDateSave('start', tempStart)}
+              className="w-full text-xs py-0.5 px-1 border border-brand-300 rounded focus:outline-none focus:ring-1 focus:ring-brand-500"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : activity.schedule_type === 'relative' && activity.anchor != null && activity.start_offset_days != null ? (
+            formatRelativeLabel(activity.anchor, activity.start_offset_days, activity.end_offset_days ?? undefined)
+          ) : (
+            formatDate(activity.start_date)
+          )}
+        </div>
+        <div
+          className={cn(
+            'text-xs tabular-nums min-w-[90px]',
+            overdue ? 'text-red-600 font-medium' : 'text-gray-500',
+            canEditDates && 'cursor-pointer hover:bg-gray-100 rounded px-1 -mx-1'
+          )}
+          onClick={() => canEditDates && setEditingDate('end')}
+          title={canEditDates ? 'Click to edit' : undefined}
+        >
+          {canEditDates && editingDate === 'end' ? (
+            <input
+              type="date"
+              value={tempEnd}
+              min={activity.start_date || undefined}
+              onChange={(e) => setTempEnd(e.target.value)}
+              onBlur={() => handleDateSave('end', tempEnd)}
+              onKeyDown={(e) => e.key === 'Enter' && handleDateSave('end', tempEnd)}
+              className="w-full text-xs py-0.5 px-1 border border-brand-300 rounded focus:outline-none focus:ring-1 focus:ring-brand-500"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : activity.schedule_type === 'relative' && activity.anchor != null && activity.start_offset_days != null ? (
+            activity.end_offset_days != null && activity.end_offset_days !== activity.start_offset_days
+              ? (activity.anchor === 'polling' ? 'P' : 'C') + (activity.end_offset_days >= 0 ? `+${activity.end_offset_days}` : `${activity.end_offset_days}`)
+              : '—'
+          ) : (
+            formatDate(activity.end_date)
+          )}
+        </div>
         <span className="text-xs text-gray-500 tabular-nums">
           {activity.duration_days ? `${activity.duration_days}d` : '—'}
         </span>
@@ -455,6 +648,7 @@ function ActivityRow({
             onDelete={onDelete}
             onAddSub={onAddSub}
             onUpdateProgress={onUpdateProgress}
+            onUpdateDates={onUpdateDates}
           />
         ))}
     </>

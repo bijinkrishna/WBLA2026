@@ -210,7 +210,7 @@ export function useActivities(cellId?: string) {
   };
 
   const updateProgress = async (id: string, progress: number, status?: string) => {
-    const update: any = { progress };
+    const update: Record<string, unknown> = { progress };
     if (status) update.status = status;
     else if (progress === 100) update.status = 'completed';
     else if (progress > 0) update.status = 'in_progress';
@@ -219,7 +219,16 @@ export function useActivities(cellId?: string) {
     await fetch();
   };
 
-  return { activities, loading, refetch: fetch, upsert, remove, updateProgress };
+  const updateDates = async (id: string, start_date: string | null, end_date: string | null) => {
+    const { error } = await supabase
+      .from('activities')
+      .update({ start_date: start_date || null, end_date: end_date || null })
+      .eq('id', id);
+    if (error) throw error;
+    await fetch();
+  };
+
+  return { activities, loading, refetch: fetch, upsert, remove, updateProgress, updateDates };
 }
 
 // ============================================================
