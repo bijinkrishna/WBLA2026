@@ -283,7 +283,7 @@ export default function ActivitiesContent() {
         ) : (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-5 py-3 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <div className="hidden md:grid grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-5 py-3 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
               <span>Activity</span>
               <span>Start</span>
               <span>End</span>
@@ -295,7 +295,7 @@ export default function ActivitiesContent() {
 
             {/* Inline add row */}
             {showInlineAdd && (
-              <div className="grid grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-5 py-2 items-center bg-brand-50/50 border-b border-brand-100">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-5 py-2 items-center bg-brand-50/50 border-b border-brand-100">
                 <div className="flex flex-col gap-1 min-w-0">
                   <select
                     value={inlineCellId}
@@ -485,7 +485,7 @@ function ActivityRow({
     <>
       <div
         className={cn(
-          'grid grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-5 py-3 items-center hover:bg-gray-50/50 transition-colors',
+          'grid grid-cols-1 md:grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-5 py-3 items-start md:items-center hover:bg-gray-50/50 transition-colors',
           overdue && 'bg-red-50/30',
           depth > 0 && 'bg-gray-50/30'
         )}
@@ -542,13 +542,14 @@ function ActivityRow({
         {/* Dates - inline editable for absolute schedule */}
         <div
           className={cn(
-            'text-xs tabular-nums min-w-[90px]',
+            'text-xs tabular-nums min-w-[90px] flex flex-col md:flex-row md:items-center',
             overdue ? 'text-red-600 font-medium' : 'text-gray-500',
             canEditDates && 'cursor-pointer hover:bg-gray-100 rounded px-1 -mx-1'
           )}
           onClick={() => canEditDates && setEditingDate('start')}
           title={canEditDates ? 'Click to edit' : undefined}
         >
+          <span className="md:hidden text-[10px] text-gray-400 mb-0.5">Start</span>
           {canEditDates && editingDate === 'start' ? (
             <input
               type="date"
@@ -568,13 +569,14 @@ function ActivityRow({
         </div>
         <div
           className={cn(
-            'text-xs tabular-nums min-w-[90px]',
+            'text-xs tabular-nums min-w-[90px] flex flex-col md:flex-row md:items-center',
             overdue ? 'text-red-600 font-medium' : 'text-gray-500',
             canEditDates && 'cursor-pointer hover:bg-gray-100 rounded px-1 -mx-1'
           )}
           onClick={() => canEditDates && setEditingDate('end')}
           title={canEditDates ? 'Click to edit' : undefined}
         >
+          <span className="md:hidden text-[10px] text-gray-400 mb-0.5">End</span>
           {canEditDates && editingDate === 'end' ? (
             <input
               type="date"
@@ -595,41 +597,53 @@ function ActivityRow({
             formatDate(activity.end_date)
           )}
         </div>
-        <span className="text-xs text-gray-500 tabular-nums">
-          {activity.duration_days ? `${activity.duration_days}d` : '—'}
-        </span>
+
+        {/* Duration */}
+        <div className="text-xs text-gray-500 tabular-nums flex flex-col md:flex-row md:items-center md:gap-2">
+          <span className="md:hidden text-[10px] text-gray-400">Duration</span>
+          <span>{activity.duration_days ? `${activity.duration_days}d` : '—'}</span>
+        </div>
 
         {/* Priority */}
-        <PriorityBadge priority={activity.priority} />
+        <div className="flex flex-col md:flex-row md:items-center md:gap-2">
+          <span className="md:hidden text-[10px] text-gray-400">Priority</span>
+          <PriorityBadge priority={activity.priority} />
+        </div>
 
         {/* Progress */}
-        <ProgressBar value={activity.progress} size="sm" />
+        <div className="flex flex-col md:flex-row md:items-center md:gap-2">
+          <span className="md:hidden text-[10px] text-gray-400">Progress</span>
+          <ProgressBar value={activity.progress} size="sm" />
+        </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-1">
-          {depth === 0 && (
+        <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-1 md:gap-1">
+          <span className="md:hidden text-[10px] text-gray-400">Actions</span>
+          <div className="flex items-center justify-end gap-1 w-full">
+            {depth === 0 && (
+              <button
+                onClick={() => onAddSub(activity)}
+                title="Add sub-activity"
+                className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
+              >
+                <PlusIcon size={14} />
+              </button>
+            )}
             <button
-              onClick={() => onAddSub(activity)}
-              title="Add sub-activity"
-              className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
+              onClick={() => onEdit(activity)}
+              title="Edit"
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <PlusIcon size={14} />
+              <Pencil size={14} />
             </button>
-          )}
-          <button
-            onClick={() => onEdit(activity)}
-            title="Edit"
-            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            onClick={() => onDelete(activity.id, activity.title)}
-            title="Delete"
-            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-          >
-            <Trash2 size={14} />
-          </button>
+            <button
+              onClick={() => onDelete(activity.id, activity.title)}
+              title="Delete"
+              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
