@@ -35,7 +35,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <div className="px-8 py-6 max-w-xl">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-xl">
         <PageHeader
           title="Election Dates"
           subtitle="Set Polling Day and Counting Day. All relative activities (P-2, C-1, etc.) resolve to these dates. When the actual date is announced, change it here and save—relative dates will update accordingly."

@@ -43,7 +43,7 @@ export default function CellsPage() {
 
   return (
     <AppShell>
-      <div className="px-8 py-6 max-w-[1400px]">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-[1400px]">
         <PageHeader
           title="Election Cells"
           subtitle={`${cells.length} cells at District Headquarters, Paschim Medinipur`}

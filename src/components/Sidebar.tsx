@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -24,7 +25,13 @@ const NAV_ITEMS = [
   { href: '/settings', label: 'Election Dates', icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({
+  mobileOpen = false,
+  onMobileClose,
+}: {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -36,13 +43,41 @@ export default function Sidebar() {
     router.refresh();
   };
 
+  const handleNavClick = () => {
+    onMobileClose?.();
+  };
+
   return (
-    <aside
-      className={cn(
-        'fixed left-0 top-0 h-screen bg-brand-500 text-white z-50 flex flex-col transition-all duration-300',
-        collapsed ? 'w-[68px]' : 'w-[260px]'
+    <>
+      {/* Mobile overlay */}
+      {onMobileClose && (
+        <div
+          className={cn(
+            'lg:hidden fixed inset-0 bg-black/40 z-40 transition-opacity',
+            mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          )}
+          onClick={onMobileClose}
+          aria-hidden="true"
+        />
       )}
-    >
+      <aside
+        className={cn(
+          'fixed left-0 top-0 h-screen bg-brand-500 text-white z-50 flex flex-col transition-all duration-300',
+          collapsed ? 'w-[68px]' : 'w-[260px]',
+          // Mobile: drawer behavior
+          onMobileClose && !mobileOpen && '-translate-x-full lg:translate-x-0'
+        )}
+      >
+        {/* Mobile close button */}
+        {onMobileClose && (
+          <button
+            onClick={onMobileClose}
+            className="lg:hidden absolute top-4 right-4 p-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white"
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
+        )}
       {/* Header */}
       <div className="px-4 pt-5 pb-4 border-b border-white/10">
         <div className="flex items-center gap-3">
@@ -69,6 +104,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={handleNavClick}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
                 isActive
@@ -83,11 +119,14 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Collapse toggle + Logout */}
+      {/* Collapse toggle (desktop only when in overlay mode) + Logout */}
       <div className="px-3 pb-4 space-y-1">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 text-sm transition-all"
+          className={cn(
+            'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 text-sm transition-all',
+            onMobileClose && 'hidden lg:flex'
+          )}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           {!collapsed && <span>Collapse</span>}
@@ -110,5 +149,6 @@ export default function Sidebar() {
         </div>
       )}
     </aside>
+    </>
   );
 }

@@ -92,11 +92,11 @@ export function Modal({
   const widths = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh]">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-[10vh] overflow-y-auto">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className={cn('relative bg-white rounded-2xl shadow-2xl w-full mx-4 animate-fade-in', widths[size])}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+      <div className={cn('relative bg-white rounded-2xl shadow-2xl w-full max-h-[85vh] flex flex-col animate-fade-in', widths[size])}>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 flex-shrink-0">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate pr-2">{title}</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
@@ -104,7 +104,7 @@ export function Modal({
             <X size={18} />
           </button>
         </div>
-        <div className="px-6 py-5 max-h-[65vh] overflow-y-auto">{children}</div>
+        <div className="px-4 sm:px-6 py-5 overflow-y-auto flex-1 min-h-0">{children}</div>
       </div>
     </div>
   );
@@ -123,12 +123,12 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between mb-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{title}</h1>
-        {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 sm:mb-8">
+      <div className="min-w-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">{title}</h1>
+        {subtitle && <p className="text-sm text-gray-500 mt-1 truncate">{subtitle}</p>}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="flex-shrink-0 flex flex-wrap gap-2">{action}</div>}
     </div>
   );
 }

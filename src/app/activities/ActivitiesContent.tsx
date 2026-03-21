@@ -177,22 +177,23 @@ export default function ActivitiesContent() {
 
   return (
     <AppShell>
-      <div className="px-8 py-6 max-w-[1400px]">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-[1400px]">
         <PageHeader
           title="Activities"
           subtitle={currentCell ? `${currentCell.name} (${currentCell.short_code})` : 'All cells'}
           action={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handleShowInlineAdd}
-                className="flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 transition-colors shadow-sm"
               >
-                <Plus size={16} />
-                Add activity (inline)
+                <Plus size={16} className="flex-shrink-0" />
+                <span className="hidden sm:inline">Add activity (inline)</span>
+                <span className="sm:hidden">Inline</span>
               </button>
               <button
                 onClick={handleCreate}
-                className="flex items-center gap-2 px-3 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 sm:py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Full form
               </button>
@@ -201,9 +202,9 @@ export default function ActivitiesContent() {
         />
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-6">
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px] max-w-xs">
+          <div className="relative flex-1 min-w-0 sm:min-w-[200px] sm:max-w-xs">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -214,19 +215,19 @@ export default function ActivitiesContent() {
             />
           </div>
 
-          {/* Cell filter */}
+          {/* Cell + Status filters */}
+          <div className="flex gap-2 flex-1 sm:flex-initial">
           <select
             value={selectedCell}
             onChange={(e) => {
               setSelectedCell(e.target.value);
-              // Update URL
               const url = new URL(window.location.href);
               if (e.target.value) url.searchParams.set('cell', e.target.value);
               else url.searchParams.delete('cell');
               window.history.replaceState({}, '', url.toString());
               window.location.reload();
             }}
-            className="px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            className="min-w-0 flex-1 sm:flex-initial px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
           >
             <option value="">All Cells</option>
             {cells.map((c) => (
@@ -235,12 +236,10 @@ export default function ActivitiesContent() {
               </option>
             ))}
           </select>
-
-          {/* Status filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            className="flex-1 sm:flex-initial px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
           >
             <option value="">All Status</option>
             <option value="not_started">Not Started</option>
@@ -249,8 +248,9 @@ export default function ActivitiesContent() {
             <option value="delayed">Delayed</option>
             <option value="on_hold">On Hold</option>
           </select>
+          </div>
 
-          <span className="text-xs text-gray-400 ml-auto">
+          <span className="text-xs text-gray-400 sm:ml-auto">
             {filteredActivities.length} activities
           </span>
         </div>
@@ -295,12 +295,12 @@ export default function ActivitiesContent() {
 
             {/* Inline add row */}
             {showInlineAdd && (
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-5 py-2 items-center bg-brand-50/50 border-b border-brand-100">
-                <div className="flex flex-col gap-1 min-w-0">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-4 sm:px-5 py-3 items-center bg-brand-50/50 border-b border-brand-100">
+                <div className="flex flex-col gap-2 min-w-0">
                   <select
                     value={inlineCellId}
                     onChange={(e) => setInlineCellId(e.target.value)}
-                    className="w-full max-w-[200px] px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="w-full sm:max-w-[200px] px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
                   >
                     <option value="">Select cell</option>
                     {cells.map((c) => (
@@ -316,31 +316,31 @@ export default function ActivitiesContent() {
                     onKeyDown={(e) => e.key === 'Enter' && handleInlineSave()}
                   />
                 </div>
+                <div className="grid grid-cols-2 sm:contents gap-2">
                 <input
                   type="date"
                   value={inlineStart}
                   onChange={(e) => setInlineStart(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
                 <input
                   type="date"
                   value={inlineEnd}
                   onChange={(e) => setInlineEnd(e.target.value)}
                   min={inlineStart || undefined}
-                  className="w-full px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
-                <span className="text-xs text-gray-400">—</span>
                 <select
                   value={inlinePriority}
                   onChange={(e) => setInlinePriority(e.target.value as ActivityFormData['priority'])}
-                  className="w-full px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="col-span-2 sm:col-span-1 px-2 py-1.5 text-xs rounded border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
                 >
                   <option value="critical">Critical</option>
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
                 </select>
-                <span className="text-xs text-gray-400">—</span>
+                </div>
                 <div className="flex items-center justify-end gap-1">
                   <button
                     type="button"
@@ -367,17 +367,17 @@ export default function ActivitiesContent() {
                 <div key={cell.id}>
                   {/* Cell header */}
                   <div
-                    className="flex items-center gap-2 px-5 py-2.5 font-semibold text-sm"
+                    className="flex items-center gap-2 px-4 sm:px-5 py-2.5 font-semibold text-sm min-w-0"
                     style={{ backgroundColor: cell.color + '18', borderLeft: `4px solid ${cell.color}` }}
                   >
                     <span
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: cell.color }}
                     />
-                    <span className="text-gray-800">
+                    <span className="text-gray-800 truncate">
                       {cell.short_code} — {cell.name}
                     </span>
-                    <span className="text-xs font-normal text-gray-500">
+                    <span className="text-xs font-normal text-gray-500 flex-shrink-0">
                       {cellActivities.length} {cellActivities.length === 1 ? 'activity' : 'activities'}
                     </span>
                   </div>
@@ -485,13 +485,13 @@ function ActivityRow({
     <>
       <div
         className={cn(
-          'grid grid-cols-1 md:grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-5 py-3 items-start md:items-center hover:bg-gray-50/50 transition-colors',
+          'grid grid-cols-1 md:grid-cols-[1fr_100px_100px_90px_70px_130px_80px] gap-2 px-4 sm:px-5 py-3 items-start md:items-center hover:bg-gray-50/50 transition-colors',
           overdue && 'bg-red-50/30',
           depth > 0 && 'bg-gray-50/30'
         )}
       >
-        {/* Title */}
-        <div className="flex items-center gap-2 min-w-0" style={{ paddingLeft: depth * 24 }}>
+        {/* Title - compact on mobile */}
+        <div className="flex items-start gap-2 min-w-0" style={{ paddingLeft: depth * 24 }}>
           {hasSubs ? (
             <button onClick={onToggle} className="p-0.5 text-gray-400 hover:text-gray-600">
               {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -505,13 +505,21 @@ function ActivityRow({
               style={{ backgroundColor: activity.cell.color }}
             />
           )}
-          <div className="min-w-0 flex-1">
-            <p className={cn('text-sm truncate', depth === 0 ? 'font-medium text-gray-900' : 'text-gray-700')}>
+          <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className={cn('text-sm truncate flex-1 min-w-0', depth === 0 ? 'font-medium text-gray-900' : 'text-gray-700')}>
               {activity.title}
             </p>
             {depth === 0 && activity.cell && (
-              <p className="text-[11px] text-gray-400">{activity.cell.short_code}</p>
+              <span className="text-[11px] text-gray-400 flex-shrink-0">{activity.cell.short_code}</span>
             )}
+            {activity.is_milestone && (
+              <span className="text-amber-500 text-[10px] font-bold px-1.5 py-0.5 bg-amber-50 rounded flex-shrink-0">
+                ◆ MS
+              </span>
+            )}
+            <span className="md:hidden flex-shrink-0">
+              <StatusBadge status={activity.status} />
+            </span>
             {activity.depends_on && activity.depends_on.length > 0 && (
               <div className="flex flex-wrap items-center gap-1 mt-1">
                 <ArrowRight size={10} className="text-indigo-500 flex-shrink-0" />
@@ -531,12 +539,9 @@ function ActivityRow({
               </div>
             )}
           </div>
-          {activity.is_milestone && (
-            <span className="text-amber-500 text-[10px] font-bold px-1.5 py-0.5 bg-amber-50 rounded flex-shrink-0">
-              ◆ MS
-            </span>
-          )}
-          <StatusBadge status={activity.status} />
+          <span className="hidden md:inline">
+            <StatusBadge status={activity.status} />
+          </span>
         </div>
 
         {/* Dates - inline editable for absolute schedule */}

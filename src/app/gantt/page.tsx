@@ -168,7 +168,7 @@ export default function GanttPage() {
 
   return (
     <AppShell>
-      <div className="px-8 py-6">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 overflow-x-auto">
         <PageHeader
           title="Gantt Chart"
           subtitle="Election activity timeline across all cells"

@@ -43,7 +43,7 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      <div className="px-8 py-6 max-w-[1400px]">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-[1400px]">
         {/* Title Band */}
         <div className="mb-8 bg-gradient-to-r from-brand-500 via-brand-600 to-brand-700 rounded-2xl p-6 text-white relative overflow-hidden">
           <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
