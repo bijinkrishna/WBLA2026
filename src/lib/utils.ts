@@ -40,7 +40,18 @@ export function daysBetween(start: string, end: string): number {
 
 export function isOverdue(endDate: string | null, status: Status): boolean {
   if (!endDate || status === 'completed') return false;
-  return new Date(endDate) < new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(endDate + 'T00:00:00');
+  return due < today; // Overdue only if due date (start of day) is before today
+}
+
+export function isUpcoming(dateStr: string | null): boolean {
+  if (!dateStr) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr + 'T00:00:00');
+  return d >= today;
 }
 
 export function formatRelativeLabel(

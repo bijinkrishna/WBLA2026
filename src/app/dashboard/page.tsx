@@ -3,7 +3,7 @@
 import AppShell from '@/components/AppShell';
 import { PageHeader, ProgressBar, StatusBadge } from '@/components/ui';
 import { useCellSummary, useActivities } from '@/lib/hooks';
-import { cn, STATUS_CONFIG, formatDate, formatRelativeLabel, isOverdue } from '@/lib/utils';
+import { cn, STATUS_CONFIG, formatDate, formatRelativeLabel, isOverdue, isUpcoming } from '@/lib/utils';
 import type { CellProgressSummary, Status } from '@/types';
 import {
   LayoutDashboard,
@@ -35,9 +35,9 @@ export default function DashboardPage() {
 
   // Flatten all activities to find overdue and upcoming
   const allActivities = activities.flatMap(a => [a, ...(a.sub_activities || [])]);
-  const overdueActivities = allActivities.filter(a => isOverdue(a.end_date, a.status));
+  const overdueActivities = allActivities.filter(a => a.progress < 100 && isOverdue(a.end_date, a.status));
   const upcomingActivities = allActivities
-    .filter(a => a.status !== 'completed' && a.start_date)
+    .filter(a => a.status !== 'completed' && a.progress < 100 && a.start_date && isUpcoming(a.start_date))
     .sort((a, b) => new Date(a.start_date!).getTime() - new Date(b.start_date!).getTime())
     .slice(0, 5);
 
@@ -127,58 +127,91 @@ export default function DashboardPage() {
           {/* Alerts & Upcoming */}
           <div className="space-y-6">
             {/* Overdue */}
-            {overdueActivities.length > 0 && (
-              <div className="bg-white rounded-xl border border-red-100 p-5 shadow-sm">
-                <h3 className="font-semibold text-red-700 flex items-center gap-2 mb-3">
+            <div className="bg-white rounded-xl border border-red-100 p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-red-700 flex items-center gap-2">
                   <AlertTriangle size={16} />
-                  Overdue Activities ({overdueActivities.length})
+                  Overdue
+                  {overdueActivities.length > 0 && (
+                    <span className="text-red-600">({overdueActivities.length})</span>
+                  )}
                 </h3>
-                <div className="space-y-2">
-                  {overdueActivities.slice(0, 5).map((a) => (
-                    <div key={a.id} className="flex items-start gap-2 text-sm">
-                      <div
-                        className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                        style={{ backgroundColor: a.cell?.color || '#DC2626' }}
-                      />
-                      <div className="min-w-0">
-                        <p className="text-gray-800 truncate font-medium">{a.title}</p>
-                        <p className="text-xs text-gray-400">
-                          Due: {a.schedule_type === 'relative' && a.anchor && a.end_offset_days != null
-                            ? formatRelativeLabel(a.anchor, a.end_offset_days)
-                            : formatDate(a.end_date)} &middot; {a.cell?.short_code}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {overdueActivities.length > 5 && (
+                  <Link
+                    href="/activities"
+                    className="text-xs text-red-600 hover:underline flex items-center gap-1"
+                  >
+                    View all <ArrowRight size={12} />
+                  </Link>
+                )}
               </div>
-            )}
+              <div className="space-y-2">
+                {overdueActivities.slice(0, 5).map((a) => (
+                  <Link
+                    key={a.id}
+                    href={`/activities?cell=${a.cell_id}`}
+                    className="flex items-start gap-2 text-sm p-2 -mx-2 rounded-lg hover:bg-red-50/50 transition-colors group"
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                      style={{ backgroundColor: a.cell?.color || '#DC2626' }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-gray-800 truncate font-medium group-hover:text-red-700">{a.title}</p>
+                      <p className="text-xs text-gray-500">
+                        Due: {a.schedule_type === 'relative' && a.anchor && a.end_offset_days != null
+                          ? formatRelativeLabel(a.anchor, a.end_offset_days)
+                          : formatDate(a.end_date)} · {a.cell?.short_code}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+                {overdueActivities.length === 0 && (
+                  <p className="text-sm text-emerald-600 flex items-center gap-2 py-2">
+                    <CheckCircle2 size={16} />
+                    No overdue activities
+                  </p>
+                )}
+              </div>
+            </div>
 
             {/* Upcoming */}
             <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-              <h3 className="font-semibold text-gray-800 flex items-center gap-2 mb-3">
-                <Clock size={16} />
-                Upcoming Activities
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <Clock size={16} />
+                  Upcoming
+                </h3>
+                <Link
+                  href="/activities"
+                  className="text-xs text-brand-500 hover:underline flex items-center gap-1"
+                >
+                  View all <ArrowRight size={12} />
+                </Link>
+              </div>
               <div className="space-y-2">
                 {upcomingActivities.map((a) => (
-                  <div key={a.id} className="flex items-start gap-2 text-sm">
+                  <Link
+                    key={a.id}
+                    href={`/activities?cell=${a.cell_id}`}
+                    className="flex items-start gap-2 text-sm p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                  >
                     <div
                       className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
                       style={{ backgroundColor: a.cell?.color || '#3B82F6' }}
                     />
-                    <div className="min-w-0">
-                      <p className="text-gray-800 truncate font-medium">{a.title}</p>
-                      <p className="text-xs text-gray-400">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-gray-800 truncate font-medium group-hover:text-brand-600">{a.title}</p>
+                      <p className="text-xs text-gray-500">
                         {a.schedule_type === 'relative' && a.anchor && a.start_offset_days != null
                           ? formatRelativeLabel(a.anchor, a.start_offset_days, a.end_offset_days ?? undefined)
-                          : formatDate(a.start_date)} &middot; {a.progress}% &middot; {a.cell?.short_code}
+                          : formatDate(a.start_date)} · {a.progress}% · {a.cell?.short_code}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
                 {upcomingActivities.length === 0 && (
-                  <p className="text-xs text-gray-400">No upcoming activities</p>
+                  <p className="text-sm text-gray-500 py-2">No upcoming activities</p>
                 )}
               </div>
             </div>
