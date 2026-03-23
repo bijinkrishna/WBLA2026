@@ -109,9 +109,9 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     const params: Record<string, string> = {};
-    for (const [k, v] of formData.entries()) {
+    formData.forEach((v, k) => {
       if (typeof v === 'string') params[k] = v;
-    }
+    });
 
     const body = params.Body?.trim() || '';
     if (!body) {
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
         urgency,
         recorded_by: 'twilio_whatsapp_webhook',
       })
-      .select('id')
+      .select('id, complaint_code')
       .single();
 
     if (error) {
@@ -178,7 +178,7 @@ export async function POST(req: Request) {
       });
     }
 
-    return new Response(twimlMessage(`Complaint recorded successfully. Ref: ${data?.id || 'N/A'}`), {
+    return new Response(twimlMessage(`Complaint recorded successfully. Ref: ${data?.complaint_code || data?.id || 'N/A'}`), {
       status: 200,
       headers: xmlHeaders,
     });

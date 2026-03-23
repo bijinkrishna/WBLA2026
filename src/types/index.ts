@@ -130,6 +130,7 @@ export interface CellFormData {
 
 export interface Complaint {
   id: string;
+  complaint_code: string;
   complainant_name: string | null;
   complainant_mobile: string | null;
   complainant_email: string | null;

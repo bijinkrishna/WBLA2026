@@ -39,6 +39,7 @@ interface ComplaintFormData {
 interface VoiceCapturedData extends ComplaintFormData {}
 interface ComplaintListItem {
   id: string;
+  complaint_code: string | null;
   complainant_name: string | null;
   complainant_mobile: string | null;
   assembly_constituency: string | null;
@@ -46,6 +47,16 @@ interface ComplaintListItem {
   status: string | null;
   created_at: string | null;
   recorded_by: string | null;
+}
+
+interface ComplaintDetail extends ComplaintListItem {
+  complainant_email: string | null;
+  original_bengali: string | null;
+  english_summary: string | null;
+  location_booth_block: string | null;
+  category: string | null;
+  urgency: string | null;
+  updated_at: string | null;
 }
 
 const CATEGORIES = ['MCC', 'L&O'];
@@ -147,6 +158,9 @@ export default function ComplaintIntakePage() {
   const [stats, setStats] = useState({ queue: 0, recordedToday: 0, escalated: 0 });
   const [recentComplaints, setRecentComplaints] = useState<ComplaintListItem[]>([]);
   const [sourceFilter, setSourceFilter] = useState<'all' | 'whatsapp' | 'manual'>('all');
+  const [selectedComplaint, setSelectedComplaint] = useState<ComplaintDetail | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const speechRecognitionRef = useRef<{ stop: () => void } | null>(null);
@@ -395,10 +409,15 @@ export default function ComplaintIntakePage() {
         return;
       }
 
+      const body = await res.json().catch(() => ({}));
       setVoiceData(null);
       setTextOverrides({});
       setState('dashboard');
-      setToast('Complaint submitted successfully.');
+      setToast(
+        body?.complaintCode
+          ? `Complaint submitted successfully. Ref: ${body.complaintCode}`
+          : 'Complaint submitted successfully.'
+      );
       setTimeout(() => setToast(null), 4000);
       fetchStats();
     } catch {
@@ -424,6 +443,25 @@ export default function ComplaintIntakePage() {
 
   const setFieldOverride = useCallback((key: keyof ComplaintFormData, value: string) => {
     setTextOverrides((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const openComplaintDetails = useCallback(async (complaintId: string) => {
+    setIsDetailLoading(true);
+    setDetailError(null);
+    try {
+      const res = await fetch(`/api/complaints/${complaintId}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setDetailError(body?.error || 'Failed to load complaint details');
+        return;
+      }
+      const body = await res.json();
+      setSelectedComplaint(body?.complaint || null);
+    } catch {
+      setDetailError('Failed to load complaint details');
+    } finally {
+      setIsDetailLoading(false);
+    }
   }, []);
 
   return (
@@ -519,6 +557,7 @@ export default function ComplaintIntakePage() {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-gray-500 border-b">
+                            <th className="py-2 pr-4 font-medium">Complaint ID</th>
                             <th className="py-2 pr-4 font-medium">Name</th>
                             <th className="py-2 pr-4 font-medium">Phone</th>
                             <th className="py-2 pr-4 font-medium">AC</th>
@@ -531,6 +570,15 @@ export default function ComplaintIntakePage() {
                         <tbody>
                           {filteredRecentComplaints.map((c) => (
                             <tr key={c.id} className="border-b last:border-b-0">
+                              <td className="py-2 pr-4">
+                                <button
+                                  type="button"
+                                  onClick={() => openComplaintDetails(c.id)}
+                                  className="text-brand-600 hover:text-brand-700 underline underline-offset-2 font-medium"
+                                >
+                                  {c.complaint_code || c.id.slice(0, 8)}
+                                </button>
+                              </td>
                               <td className="py-2 pr-4 text-gray-900">{c.complainant_name || '—'}</td>
                               <td className="py-2 pr-4 text-gray-900">{c.complainant_mobile || '—'}</td>
                               <td className="py-2 pr-4 text-gray-900">{c.assembly_constituency || '—'}</td>
@@ -883,6 +931,55 @@ export default function ComplaintIntakePage() {
           <div className="fixed bottom-6 right-6 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in z-50">
             <AlertCircle size={20} />
             <span className="font-medium">{toastError}</span>
+          </div>
+        )}
+        {(isDetailLoading || detailError || selectedComplaint) && (
+          <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
+            <div className="w-full max-w-2xl rounded-2xl bg-white border border-gray-200 shadow-xl">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">Complaint Details</h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedComplaint(null);
+                    setDetailError(null);
+                    setIsDetailLoading(false);
+                  }}
+                  className="text-sm text-gray-600 hover:text-gray-900"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="p-6 space-y-3 text-sm">
+                {isDetailLoading && <p className="text-gray-600">Loading complaint details...</p>}
+                {!isDetailLoading && detailError && <p className="text-red-600">{detailError}</p>}
+                {!isDetailLoading && !detailError && selectedComplaint && (
+                  <>
+                    <p><span className="font-medium text-gray-700">Complaint ID:</span> {selectedComplaint.complaint_code || selectedComplaint.id}</p>
+                    <p><span className="font-medium text-gray-700">Name:</span> {selectedComplaint.complainant_name || '—'}</p>
+                    <p><span className="font-medium text-gray-700">Mobile:</span> {selectedComplaint.complainant_mobile || '—'}</p>
+                    <p><span className="font-medium text-gray-700">Email:</span> {selectedComplaint.complainant_email || '—'}</p>
+                    <p><span className="font-medium text-gray-700">AC:</span> {selectedComplaint.assembly_constituency || '—'}</p>
+                    <p><span className="font-medium text-gray-700">Block / ULB:</span> {selectedComplaint.block_municipality || '—'}</p>
+                    <p><span className="font-medium text-gray-700">Polling Station:</span> {selectedComplaint.location_booth_block || '—'}</p>
+                    <p><span className="font-medium text-gray-700">Category:</span> {selectedComplaint.category || '—'}</p>
+                    <p><span className="font-medium text-gray-700">Urgency:</span> {selectedComplaint.urgency || '—'}</p>
+                    <p><span className="font-medium text-gray-700">Status:</span> {selectedComplaint.status || '—'}</p>
+                    <p><span className="font-medium text-gray-700">Recorded By:</span> {selectedComplaint.recorded_by || '—'}</p>
+                    <p><span className="font-medium text-gray-700">Created:</span> {selectedComplaint.created_at ? new Date(selectedComplaint.created_at).toLocaleString() : '—'}</p>
+                    <p><span className="font-medium text-gray-700">Updated:</span> {selectedComplaint.updated_at ? new Date(selectedComplaint.updated_at).toLocaleString() : '—'}</p>
+                    <div className="pt-2">
+                      <p className="font-medium text-gray-700 mb-1">Original Bengali</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{selectedComplaint.original_bengali || '—'}</p>
+                    </div>
+                    <div className="pt-1">
+                      <p className="font-medium text-gray-700 mb-1">English Summary</p>
+                      <p className="text-gray-700 whitespace-pre-wrap">{selectedComplaint.english_summary || '—'}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

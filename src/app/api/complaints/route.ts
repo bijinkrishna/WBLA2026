@@ -48,14 +48,14 @@ export async function POST(req: Request) {
           : null,
         recorded_by: user.email || user.id,
       })
-      .select('id')
+      .select('id, complaint_code')
       .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, id: data?.id });
+    return NextResponse.json({ success: true, id: data?.id, complaintCode: data?.complaint_code });
   } catch (e) {
     return NextResponse.json({ error: 'Failed to save complaint' }, { status: 500 });
   }
@@ -90,7 +90,7 @@ export async function GET() {
 
     const { data: recent } = await supabase
       .from('complaints')
-      .select('id, complainant_name, complainant_mobile, assembly_constituency, block_municipality, status, created_at, recorded_by')
+      .select('id, complaint_code, complainant_name, complainant_mobile, assembly_constituency, block_municipality, status, created_at, recorded_by')
       .order('created_at', { ascending: false })
       .limit(20);
 
