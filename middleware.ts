@@ -1,8 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PROTECTED_PATHS = ['/', '/dashboard', '/cells', '/activities', '/gantt', '/settings'];
+const PROTECTED_PATHS = ['/', '/dashboard', '/cells', '/activities', '/gantt', '/complaints', '/settings'];
 const PUBLIC_PATHS = ['/login'];
+const COMPLAINT_ADMIN_EMAIL = 'dm-mid-wb@nic.in';
 
 function isProtected(pathname: string) {
   return PROTECTED_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
@@ -10,6 +11,10 @@ function isProtected(pathname: string) {
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.includes(pathname);
+}
+
+function isComplaintPath(pathname: string) {
+  return pathname === '/complaints' || pathname.startsWith('/complaints/');
 }
 
 export async function middleware(request: NextRequest) {
@@ -41,6 +46,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isPublic(request.nextUrl.pathname) && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // Complaint Intake: only dm-mid-wb@nic.in
+  if (isComplaintPath(request.nextUrl.pathname) && user?.email !== COMPLAINT_ADMIN_EMAIL) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

@@ -9,19 +9,23 @@ import {
   Building2,
   ListChecks,
   GanttChart,
+  MessageSquareWarning,
   Settings,
   ChevronLeft,
   ChevronRight,
   LogOut,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+const COMPLAINT_ADMIN_EMAIL = 'dm-mid-wb@nic.in';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/cells', label: 'Cells', icon: Building2 },
   { href: '/activities', label: 'Activities', icon: ListChecks },
   { href: '/gantt', label: 'Gantt Chart', icon: GanttChart },
+  { href: '/complaints', label: 'Complaint Intake', icon: MessageSquareWarning, restrictedToEmail: COMPLAINT_ADMIN_EMAIL },
   { href: '/settings', label: 'Election Dates', icon: Settings },
 ];
 
@@ -35,6 +39,13 @@ export default function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email ?? null);
+    });
+  }, []);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -98,7 +109,12 @@ export default function Sidebar({
 
       {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-1">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((item) => {
+          if ('restrictedToEmail' in item && item.restrictedToEmail) {
+            return userEmail === item.restrictedToEmail;
+          }
+          return true;
+        }).map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
             <Link

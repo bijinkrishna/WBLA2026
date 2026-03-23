@@ -128,6 +128,24 @@ export interface CellFormData {
   color: string;
 }
 
+export interface Complaint {
+  id: string;
+  complainant_name: string | null;
+  complainant_mobile: string | null;
+  complainant_email: string | null;
+  assembly_constituency: string;
+  block_municipality: string;
+  original_bengali: string | null;
+  english_summary: string | null;
+  location_booth_block: string | null;
+  category: string | null;
+  urgency: string | null;
+  status: string;
+  recorded_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ActivityFormData {
   cell_id: string;
   parent_activity_id: string | null;

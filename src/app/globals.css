@@ -39,6 +39,15 @@ body {
   height: 8px;
 }
 
+/* Recording pulse animation */
+@keyframes recordPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); }
+  50% { box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
+}
+.animate-record-pulse {
+  animation: recordPulse 1.5s ease-in-out infinite;
+}
+
 /* Progress bar animation */
 @keyframes progressFill {
   from { width: 0%; }
